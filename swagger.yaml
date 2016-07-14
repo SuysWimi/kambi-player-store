@@ -1,0 +1,294 @@
+swagger: "2.0"
+info:
+  version: 1.0.0
+  title: KambiPlayerStore
+  description: An API to store, retrieve and search for player information to comply with the KSC F5 forms
+  termsOfService: http://swagger.io/terms/
+  contact:
+    name: David Suys
+    email: d.suys@wimionline.be
+    url: http://napoleongames.be
+  license:
+    name: MIT
+    url: http://github.com/gruntjs/grunt/blob/master/LICENSE-MIT
+host: kambiplayerstore.napoleongames.be
+basePath: /api
+schemes:
+  - http
+consumes:
+  - application/json
+produces:
+  - application/json
+paths:
+  /players:
+    get:
+      description: Returns all players (max 20) from the system that correspond to the given search parameters
+      produces: 
+        - application/json
+      operationId: findPlayers
+      parameters:
+        - name: firstName
+          in: query
+          required: false
+          type: string
+        - name: lastName
+          in: query
+          required: false
+          type: string
+        - name: birthDate
+          in: query
+          required: false
+          type: string
+        - name: birthPlace
+          in: query
+          required: false
+          type: string
+        - name: profession
+          in: query
+          required: false
+          type: string
+        - name: street
+          in: query
+          required: false
+          type: string
+        - name: houseNumber
+          in: query
+          required: false
+          type: string
+        - name: houseBox
+          in: query
+          required: false
+          type: string
+        - name: zipCode
+          in: query
+          required: false
+          type: string
+        - name: city
+          in: query
+          required: false
+          type: string
+        - name: countryCode
+          in: query
+          required: false
+          type: string
+        - name: idCardNumber
+          in: query
+          required: false
+          type: string
+        - name: kambiId
+          in: query
+          required: false
+          type: string
+      responses:
+        200:
+          description: player response
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Player'
+        default:
+          description: unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+    post:
+      description: Creates a new player in the datastore. Duplicates are not allowed
+      operationId: addPlayer
+      parameters:
+        - name: player
+          in: body
+          description: Player to add to the datastore
+          required: true
+          schema:
+            $ref: '#/definitions/NewPlayer'
+      responses:
+        201:
+          description: Location header to '/players/{uuid}'
+        409:
+          description: Player already exists, Location header to '/players/{uuid}'
+  /players/{uuid}:
+    get:
+      description: Returns a player based on a single ID
+      produces: 
+        - application/json
+      operationId: findPlayer
+      parameters:
+        - name: uuid
+          in: path
+          description: ID of player to fetch
+          required: true
+          type: string
+          format: uuid
+      responses:
+        200:
+          description: player response
+          schema:
+            $ref: '#/definitions/Player'
+        default:
+          description: unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+    put:
+      description: Updates a single player based on the ID supplied
+      produces: 
+        - application/json
+      operationId: updatePlayer
+      parameters:
+        - name: uuid
+          in: path
+          description: ID of player to update
+          required: true
+          type: string
+          format: uuid
+      responses:
+        200:
+          description: player updated
+          schema:
+            $ref: '#/definitions/Player'
+        default:
+          description: unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+    delete:
+      description: Deletes a single player based on the ID supplied
+      produces: 
+        - application/json
+      operationId: deletePlayer
+      parameters:
+        - name: uuid
+          in: path
+          description: ID of player to delete
+          required: true
+          type: string
+          format: uuid
+      responses:
+        204:
+          description: player deleted
+          schema:
+            $ref: '#/definitions/Player'
+        default:
+          description: unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+definitions:
+  Player:
+    allOf:
+      - $ref: '#/definitions/NewPlayer'
+      - properties:
+          uuid:
+            type: string
+            format: uuid
+          registered:
+            type: string
+            format: iso-date-time
+          updated:
+            type: string
+            format: iso-date-time
+      - required:
+        - uuid
+        - registered
+        - updated
+  NewPlayer:
+    required:
+      - firstName
+      - lastName
+      - birthDate
+      - birthPlace
+      - profession
+      - street
+      - houseNumber
+      - houseBox
+      - zipCode
+      - city
+      - countryCode
+    properties:
+      firstName:
+        type: string
+        minLength: 0
+        maxLength: 50
+      lastName:
+        type: string
+        minLength: 0
+        maxLength: 50
+      birthDate:
+        type: string
+        minLength: 0
+        maxLength: 10
+      birthPlace:
+        type: string
+        minLength: 0
+        maxLength: 50
+      profession:
+        type: string
+        minLength: 0
+        maxLength: 50
+      street:
+        type: string
+        minLength: 0
+        maxLength: 50
+      houseNumber:
+        type: string
+        minLength: 0
+        maxLength: 10
+      houseBox:
+        type: string
+        minLength: 0
+        maxLength: 10
+      zipCode:
+        type: string
+        minLength: 0
+        maxLength: 10
+      city:
+        type: string
+        minLength: 0
+        maxLength: 50
+      countryCode:
+        type: string
+        minLength: 0
+        maxLength: 2
+      idCardNumber:
+        type: string
+        minLength: 0
+        maxLength: 50
+      kambiId:
+        type: string
+        minLength: 0
+        maxLength: 50
+  Error:
+    required:
+      - code
+      - key
+      - message
+    properties:
+      code:
+        type: integer
+        format: int32
+      key:
+        type: string
+      message:
+        type: string
+  ValidationError:
+    allOf:
+      - $ref: '#/definitions/Error'
+      - required:
+        - fields
+        properties:
+          fields:
+            type: array
+            items:
+              $ref: '#/definitions/FieldError'
+  FieldError:
+    required:
+      - fieldName
+      - code
+      - key
+      - message
+    properties:
+      fieldName:
+        type: string
+      code:
+        type: integer
+        format: int32
+      key:
+        type: string
+      message:
+        type: string
